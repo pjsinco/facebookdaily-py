@@ -6,30 +6,42 @@ likes, shares, comments, etc.
 """
 import MySQLdb as mysql
 import urllib2
+import urllib
 import datetime
 from xml.dom.minidom import parseString
 import settings
+import sys
+from pprint import pprint
 
 def main():
   print "Checking Facebook ..."
 
   # get all id's of published posts
-  idList = getListOfIds()
+  postList = getAllInfoForAllPosts()
 
   # check each one to see if the db needs to be updated to reflect new
   # facebook likes, counts, shares, etc.
-  for id in idList: 
-    print "Checking %s" % (id)
-    updatedVal = getUpdatedVal(id)
-    currentVal = getCurrentVal(id)
+  for post in postList: 
+    id = post[0]
+    #print "Checking %s" % (post[1])
+    updatedVal = getUpdatedVal(post)
 
     # if we have no entry at all for this it, add a db entry
-    if isInDb(id) == False:
+    if not isInDb(id):
       insertEntry(updatedVal['id'], updatedVal, True)
-    
+      break
+    else:
+      currentVal = getCurrentVal(id)
+
     # if values have changed, update the db
     if valsAreEqual(updatedVal, currentVal) == False:
       insertEntry(updatedVal['id'], updatedVal, False)
+
+def permalink(slug, date):
+  """ Returns a link in the form of 
+      http://thedo.osteopathic.org/2014/09/greys-anatomy-vs-real-life-residency/
+  """
+  return '%s/%d/%s/%s/' % (settings.BASE_URL, date.year, str(date.month).zfill(2), slug)
 
 def isInDb(id):
   """ Returns a boolean indicating whether there's already
@@ -49,29 +61,44 @@ def isInDb(id):
   return True
   
 
-def getListOfIds():
-  """ Returns a list of id's of all published stories """
+def getAllInfoForAllPosts():
+  """ Returns a list of lists(id, slug, date) of all published stories """
   # set up database connection
   # IMPORTANT: set the charset and use_unicode args
-  db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
-    settings.DB, charset='utf8', use_unicode=True)
+  db = mysql.connect(
+    settings.HOST, settings.USER, settings.PW,
+    settings.DB, charset='utf8', use_unicode=True
+  )
   cur = db.cursor()
   try: 
-    cur.execute(settings.QUERY_GET_POST_IDS)
+    cur.execute(settings.QUERY_GET_POST_INFO)
     results = cur.fetchall()
-    list = [record[0] for record in results]    # list comprehension!
+    #list = [record[0] for record in results]    # list comprehension!
+    rows = []
+    for record in results:
+      row = []
+      for field in record:
+        row.append(field)
+      rows.append(row)
   except mysql.Error:
     print "Error querying the database"
-  return list
+  return rows
   
-def getUpdatedVal(id):
-  """ Return a dict of the most current Facebook counts """
+def getUpdatedVal(post):
+  """ Return a dict of the most current Facebook counts.
+      Accepts a list of 3 items: id, slug, date
+  """
+  if (type(post) is list and len(post) == 3):
+    id = post[0]
+    slug = post[1]
+    date = post[2]
+
   updated = dict.fromkeys(settings.FB_KEYS)
   updated['id'] = id
-  updated['date'] = datetime.date.today()
+  updated['date'] = str(datetime.date.today())
 
   # form the url
-  url = settings.FB_URL + str(id)
+  url = settings.FB_URL + urllib.quote_plus(permalink(slug, date))
   
   # query facebook,read the xml and close the source file
   file = urllib2.urlopen(url)
@@ -92,8 +119,11 @@ def getUpdatedVal(id):
     dom.getElementsByTagName('comment_count')[0].firstChild.data
   updated['clicks'] = \
     dom.getElementsByTagName('click_count')[0].firstChild.data
-  updated['fbid'] = \
-    dom.getElementsByTagName('comments_fbid')[0].firstChild.data
+  try:
+    updated['fbid'] = \
+      dom.getElementsByTagName('comments_fbid')[0].firstChild.data
+  except:
+    pass
   return updated
 
 def getCurrentVal(id):
@@ -102,12 +132,14 @@ def getCurrentVal(id):
   db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
     settings.DB, charset='utf8', use_unicode=True)
   cur = db.cursor()
+  
   query = "SELECT * FROM facebook WHERE id = %s and date = " \
     "(SELECT max(date) FROM facebook WHERE id = %s)" % (id, id)
+  print query
   try:
     cur.execute(query)
     results = cur.fetchone()
-    assert(len(results) == 8)
+    #assert(len(results) == 8)
     current['id'] = results[0]
     current['url'] = results[1]
     current['shares'] = results[2]

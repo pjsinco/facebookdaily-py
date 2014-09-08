@@ -1,4 +1,7 @@
 *.swp
+*.swo
+*.swm
+*.swn
 config.dat
 settings*
 .DS*
