@@ -14,7 +14,7 @@ import sys
 from pprint import pprint
 
 def main():
-  print "Checking Facebook ..."
+  print "Checking Facebook at %s\n" % datetime.datetime.now()
 
   # get all id's of published posts
   postList = getAllInfoForAllPosts()
@@ -211,19 +211,22 @@ def insertEntry(id, updatedVal, currentVal, new = False):
   new: True if the entry is new, false otherwise
   """
   if new == True:
-    print "New entry!"
+    print "New entry:\n"
     print "Inserting %s\n%s\nShares:%5s\nLikes:%6s\n" \
       "Comments:%3s" % (updatedVal['id'], getHeadline(id), updatedVal['shares'], \
       updatedVal['likes'],  updatedVal['comments'])
   else:
-    print "Update on %s:\n"\
+    print "----------------\n"\
+      "U  P  D  A  T  E\n"\
+      "----------------\n"\
+      "%s:\n"\
       "New shares:%5d\n"\
       "New likes:%6d\n"\
       "New comments:%3d\n\n"\
       "NEW TOTALS:\n"\
       "Shares:%9d\n"\
       "Likes:%10d\n"\
-      "Comments:%7d\n"\
+      "Comments:%7d\n\n"\
       % (\
         getHeadline(id),\
         int(updatedVal['shares']) - int(currentVal['shares']),\
