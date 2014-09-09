@@ -232,9 +232,9 @@ def insertEntry(id, updatedVal, currentVal, new = False):
         int(updatedVal['shares']) - int(currentVal['shares']),\
         int(updatedVal['likes']) - int(currentVal['likes']),\
         int(updatedVal['comments']) - int(currentVal['comments']),\
-        updatedVal['shares'],\
-        updatedVal['likes'],\
-        updatedVal['comments']\
+        int(updatedVal['shares']),\
+        int(updatedVal['likes']),\
+        int(updatedVal['comments'])\
       )
 
   # open db connection
