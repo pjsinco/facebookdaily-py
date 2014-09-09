@@ -28,14 +28,14 @@ def main():
 
     # if we have no entry at all for this it, add a db entry
     if not isInDb(id):
-      insertEntry(updatedVal['id'], updatedVal, True)
+      insertEntry(updatedVal['id'], updatedVal, {}, True)
       continue # skip the rest of this loop iteration
     else:
       currentVal = getCurrentVal(id)
 
     # if values have changed, update the db
     if valsAreEqual(updatedVal, currentVal) == False:
-      insertEntry(updatedVal['id'], updatedVal, False)
+      insertEntry(updatedVal['id'], updatedVal, currentVal, False)
 
 def permalink(slug, date):
   """ Returns a link in the form of 
@@ -203,7 +203,7 @@ def valsAreEqual(updated, current):
   else:
     return True
 
-def insertEntry(id, updatedVal, new = False):
+def insertEntry(id, updatedVal, currentVal, new = False):
   """
   Inserts a entry into the database
   id: the id of hte article to insert
@@ -216,9 +216,19 @@ def insertEntry(id, updatedVal, new = False):
       "Comments:%3s" % (updatedVal['id'], getHeadline(id), updatedVal['shares'], \
       updatedVal['likes'],  updatedVal['comments'])
   else:
-    print "Updating %s\n%s\nShares:%5s\nLikes:%6s\n" \
-      "Comments:%3s" % (updatedVal['id'], getHeadline(id), updatedVal['shares'], \
-      updatedVal['likes'], updatedVal['comments'])
+    print "Updating %s\n"\
+      "New shares:%5s\nNew likes:%6s\nNew comments:%3s\n"\
+      "NEW TOTALS:\n"\
+      "Shares:%9s\nLikes:%10s\n" \
+      "Comments:%7s" % (\
+        getHeadline(id),\
+        updatedVal['shares'],\
+        updatedVal['likes'],\
+        updatedVal['comments'],\
+        currentVal['shares'],\
+        currentVal['likes'],\
+        currentVal['comments']\
+      )
 
   # open db connection
   db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
