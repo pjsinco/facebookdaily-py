@@ -14,7 +14,9 @@ import sys
 from pprint import pprint
 
 def main():
-  print "Checking Facebook at %s\n" % datetime.datetime.now()
+  print "Facebook report for %s\n" % \
+    datetime.datetime.now().strftime('%A, %B %-d, %Y')
+  print "Changes since yesterday ...\n"
 
   # get all id's of published posts
   postList = getAllInfoForAllPosts()
@@ -216,14 +218,14 @@ def insertEntry(id, updatedVal, currentVal, new = False):
       "Comments:%3s" % (updatedVal['id'], getHeadline(id), updatedVal['shares'], \
       updatedVal['likes'],  updatedVal['comments'])
   else:
-    print "----------------\n"\
-      "U  P  D  A  T  E\n"\
-      "----------------\n"\
+    print "------------------\n"\
+      " U  P  D  A  T  E\n"\
+      "------------------\n"\
       "%s:\n"\
       "New shares:%5d\n"\
       "New likes:%6d\n"\
       "New comments:%3d\n\n"\
-      "NEW TOTALS:\n"\
+      "N E W   T O T A L S\n"\
       "Shares:%9d\n"\
       "Likes:%10d\n"\
       "Comments:%7d\n\n"\
@@ -255,7 +257,7 @@ def insertEntry(id, updatedVal, currentVal, new = False):
   try:
     cur.execute(query)
     db.commit()       # commit changes
-    print "Operation successful!"
+    #print "Operation successful!"
   except mysql.Error:
     db.rollback()   # roll back in case of an error
     print "Operation failed. A database error occurred. Insertion rolled back."
