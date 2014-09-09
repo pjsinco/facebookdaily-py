@@ -29,7 +29,7 @@ def main():
     # if we have no entry at all for this it, add a db entry
     if not isInDb(id):
       insertEntry(updatedVal['id'], updatedVal, True)
-      break
+      continue # skip the rest of this loop iteration
     else:
       currentVal = getCurrentVal(id)
 
@@ -57,7 +57,9 @@ def isInDb(id):
       return False
   except mysql.Error:
     print "Error querying the database"
-  db.close()
+  finally:
+    cur.close()
+    db.close()
   return True
   
 
@@ -82,6 +84,9 @@ def getAllInfoForAllPosts():
       rows.append(row)
   except mysql.Error:
     print "Error querying the database"
+  finally:
+    cur.close()
+    db.close()
   return rows
   
 def getUpdatedVal(post):
@@ -135,7 +140,6 @@ def getCurrentVal(id):
   
   query = "SELECT * FROM facebook WHERE id = %s and date = " \
     "(SELECT max(date) FROM facebook WHERE id = %s)" % (id, id)
-  print query
   try:
     cur.execute(query)
     results = cur.fetchone()
@@ -150,7 +154,9 @@ def getCurrentVal(id):
     current['date'] = results[7]
   except mysql.Error:
     print "Error querying the database"
-  db.close()
+  finally:
+    cur.close()
+    db.close()
   return current
   
 def getHeadline(id):
@@ -169,7 +175,10 @@ def getHeadline(id):
     results = cur.fetchone()[0]
   except mysql.Error:
     print "Error querying the database"
-  db.close()
+  finally:
+    cur.close()
+    db.close()
+
   return results
 
 def valsAreEqual(updated, current):
@@ -177,19 +186,19 @@ def valsAreEqual(updated, current):
   """
 
   if int(updated['shares']) != int(current['shares']):
-    print 'shares is off'
+    #print 'shares is off'
     return False
   elif int(updated['id']) != int(current['id']):
-    print 'id is off'
+    #print 'id is off'
     return False
   elif int(updated['clicks']) != int(current['clicks']):
-    print 'clicks is off'
+    #print 'clicks is off'
     return False
   elif int(updated['likes']) != int(current['likes']):
-    print 'likes is off'
+    #print 'likes is off'
     return False
   elif int(updated['comments']) != int(current['comments']):
-    print 'comments is off'
+    #print 'comments is off'
     return False
   else:
     return True
@@ -233,7 +242,9 @@ def insertEntry(id, updatedVal, new = False):
   except mysql.Error:
     db.rollback()   # roll back in case of an error
     print "Operation failed. A database error occurred. Insertion rolled back."
-  db.close()
+  finally:
+    cur.close()
+    db.close()
 
 # --------------------------------------------- #
 if __name__ == '__main__':
