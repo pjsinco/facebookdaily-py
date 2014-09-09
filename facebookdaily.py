@@ -216,18 +216,22 @@ def insertEntry(id, updatedVal, currentVal, new = False):
       "Comments:%3s" % (updatedVal['id'], getHeadline(id), updatedVal['shares'], \
       updatedVal['likes'],  updatedVal['comments'])
   else:
-    print "Updating %s\n"\
-      "New shares:%5s\nNew likes:%6s\nNew comments:%3s\n"\
+    print "Update on %s:\n"\
+      "New shares:%5d\n"\
+      "New likes:%6d\n"\
+      "New comments:%3d\n\n"\
       "NEW TOTALS:\n"\
-      "Shares:%9s\nLikes:%10s\n" \
-      "Comments:%7s" % (\
+      "Shares:%9d\n"\
+      "Likes:%10d\n"\
+      "Comments:%7d\n"\
+      % (\
         getHeadline(id),\
+        int(updatedVal['shares']) - int(currentVal['shares']),\
+        int(updatedVal['likes']) - int(currentVal['likes']),\
+        int(updatedVal['comments']) - int(currentVal['comments']),\
         updatedVal['shares'],\
         updatedVal['likes'],\
-        updatedVal['comments'],\
-        currentVal['shares'],\
-        currentVal['likes'],\
-        currentVal['comments']\
+        updatedVal['comments']\
       )
 
   # open db connection
