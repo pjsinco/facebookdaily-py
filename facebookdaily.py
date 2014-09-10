@@ -12,6 +12,7 @@ from xml.dom.minidom import parseString
 import settings
 import sys
 from pprint import pprint
+from HTMLParser import HTMLParser
 
 def main():
   print "Facebook report for %s\n" % \
@@ -164,6 +165,7 @@ def getCurrentVal(id):
 def getHeadline(id):
   """ Return the headline of the post with the given id """
   # IMPORTANT: set the charset and use_unicode args
+  parser = HTMLParser()
   db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
   settings.DB, charset='utf8', use_unicode=True)
   cur = db.cursor()
@@ -181,7 +183,7 @@ def getHeadline(id):
     cur.close()
     db.close()
 
-  return results
+  return parser.unescape(results)
 
 def valsAreEqual(updated, current):
   """ Compares updated and current returns false if they're different.
@@ -214,14 +216,22 @@ def insertEntry(id, updatedVal, currentVal, new = False):
   """
   if new == True:
     print "New entry:\n"
-    print "Inserting %s\n%s\nShares:%5s\nLikes:%6s\n" \
-      "Comments:%3s" % (updatedVal['id'], getHeadline(id), updatedVal['shares'], \
-      updatedVal['likes'],  updatedVal['comments'])
+    print "Inserting %s\n"\
+      "Shares:%5s\n"\
+      "Likes:%6s\n" \
+      "Comments:%3s" % (
+      getHeadline(id), 
+      updatedVal['shares'],
+      updatedVal['likes'],  
+      updatedVal['comments']
+      )
   else:
-    print "------------------\n"\
-      " U  P  D  A  T  E\n"\
-      "------------------\n"\
-      "%s:\n"\
+    print """
+------------------
+ U  P  D  A  T  E
+------------------
+    """
+    print "%s\n"\
       "New shares:%5d\n"\
       "New likes:%6d\n"\
       "New comments:%3d\n\n"\
