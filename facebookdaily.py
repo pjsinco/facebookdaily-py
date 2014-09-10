@@ -17,10 +17,12 @@ from HTMLParser import HTMLParser
 def main():
   print "Facebook report for %s\n" % \
     datetime.datetime.now().strftime('%A, %B %-d, %Y')
-  print "Changes since yesterday ...\n"
+  print "Activity since yesterday ...\n"
 
   # get all id's of published posts
   postList = getAllInfoForAllPosts()
+
+  has_output = False
 
   # check each one to see if the db needs to be updated to reflect new
   # facebook likes, counts, shares, etc.
@@ -32,6 +34,7 @@ def main():
     # if we have no entry at all for this it, add a db entry
     if not isInDb(id):
       insertEntry(updatedVal['id'], updatedVal, {}, True)
+      has_output = True
       continue # skip the rest of this loop iteration
     else:
       currentVal = getCurrentVal(id)
@@ -39,6 +42,11 @@ def main():
     # if values have changed, update the db
     if valsAreEqual(updatedVal, currentVal) == False:
       insertEntry(updatedVal['id'], updatedVal, currentVal, False)
+      has_output = True
+
+  if not has_output:
+    print("No changes")
+
 
 def permalink(slug, date):
   """ Returns a link in the form of 
@@ -165,7 +173,7 @@ def getCurrentVal(id):
 def getHeadline(id):
   """ Return the headline of the post with the given id """
   # IMPORTANT: set the charset and use_unicode args
-  parser = HTMLParser()
+  
   db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
   settings.DB, charset='utf8', use_unicode=True)
   cur = db.cursor()
@@ -183,7 +191,7 @@ def getHeadline(id):
     cur.close()
     db.close()
 
-  return parser.unescape(results)
+  return HTMLParser().unescape(results)
 
 def valsAreEqual(updated, current):
   """ Compares updated and current returns false if they're different.
