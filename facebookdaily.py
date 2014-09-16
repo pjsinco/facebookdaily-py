@@ -191,7 +191,7 @@ def getHeadline(id):
     cur.close()
     db.close()
 
-  return HTMLParser().unescape(results)
+  return HTMLParser().unescape(results).encode('utf-8', 'replace')
 
 def valsAreEqual(updated, current):
   """ Compares updated and current returns false if they're different.
