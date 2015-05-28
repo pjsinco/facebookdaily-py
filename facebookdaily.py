@@ -15,6 +15,13 @@ from pprint import pprint
 from HTMLParser import HTMLParser
 
 def main():
+  # set encoding to UTF-8
+  """
+  http://stackoverflow.com/questions/21129020/how-to-fix-unicodedecodeerror-ascii-codec-cant-decode-byte
+  """
+  reload(sys)
+  sys.setdefaultencoding('utf8')
+
   print "Facebook report for %s\n" % \
     datetime.datetime.now().strftime('%A, %B %-d, %Y')
   print "Activity since yesterday ...\n"
@@ -33,7 +40,7 @@ def main():
 
     # if we have no entry at all for this it, add a db entry
     if not isInDb(id):
-      insertEntry(updatedVal['id'], updatedVal, {}, True)
+      insertEntry(updatedVal['wp_post_id'], updatedVal, {}, True)
       has_output = True
       continue # skip the rest of this loop iteration
     else:
@@ -41,7 +48,7 @@ def main():
 
     # if values have changed, update the db
     if valsAreEqual(updatedVal, currentVal) == False:
-      insertEntry(updatedVal['id'], updatedVal, currentVal, False)
+      insertEntry(updatedVal['wp_post_id'], updatedVal, currentVal, False)
       has_output = True
 
   if not has_output:
@@ -110,7 +117,7 @@ def getUpdatedVal(post):
     date = post[2]
 
   updated = dict.fromkeys(settings.FB_KEYS)
-  updated['id'] = id
+  updated['wp_post_id'] = id
   updated['date'] = str(datetime.date.today())
 
   # form the url
@@ -155,7 +162,7 @@ def getCurrentVal(id):
     cur.execute(query)
     results = cur.fetchone()
     #assert(len(results) == 8)
-    current['id'] = results[0]
+    current['wp_post_id'] = results[0]
     current['url'] = results[1]
     current['shares'] = results[2]
     current['likes'] = results[3]
@@ -179,19 +186,20 @@ def getHeadline(id):
   cur = db.cursor()
   query = """
     SELECT post_title
-    FROM wp_posts
+    FROM TheDO_posts
     WHERE id = %s
   """ % (str(id))
   try: 
     cur.execute(query)
     results = cur.fetchone()[0]
+    return HTMLParser().unescape(results).encode('utf-8', 'replace')
   except mysql.Error:
     print "Error querying the database"
+    return
   finally:
     cur.close()
     db.close()
 
-  return HTMLParser().unescape(results).encode('utf-8', 'replace')
 
 def valsAreEqual(updated, current):
   """ Compares updated and current returns false if they're different.
@@ -200,8 +208,8 @@ def valsAreEqual(updated, current):
   if int(updated['shares']) != int(current['shares']):
     #print 'shares is off'
     return False
-  elif int(updated['id']) != int(current['id']):
-    #print 'id is off'
+  elif int(updated['wp_post_id']) != int(current['wp_post_id']):
+    #print 'wp_post_id is off'
     return False
   elif int(updated['clicks']) != int(current['clicks']):
     #print 'clicks is off'
@@ -264,10 +272,10 @@ def insertEntry(id, updatedVal, currentVal, new = False):
   
   # prep query
   query = """
-  INSERT INTO facebook (id, url, share_count, like_count, 
+  INSERT INTO %s (id, url, share_count, like_count, 
   comment_count, click_count, comments_fbid, date) 
   VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
-  """ % (updatedVal['id'], updatedVal['url'], updatedVal['shares'], \
+  """ % (settings.FB_TABLE, updatedVal['wp_post_id'], updatedVal['url'], updatedVal['shares'], \
     updatedVal['likes'], updatedVal['comments'], updatedVal['clicks'], \
     updatedVal['fbid'], updatedVal['date'])
 
