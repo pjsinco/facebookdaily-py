@@ -34,17 +34,17 @@ def main():
   # check each one to see if the db needs to be updated to reflect new
   # facebook likes, counts, shares, etc.
   for post in postList: 
-    id = post[0]
+    wp_post_id = post[0]
     #print "Checking %s" % (post[1])
     updatedVal = getUpdatedVal(post)
 
     # if we have no entry at all for this it, add a db entry
-    if not isInDb(id):
+    if not isInDb(wp_post_id):
       insertEntry(updatedVal['wp_post_id'], updatedVal, {}, True)
       has_output = True
       continue # skip the rest of this loop iteration
     else:
-      currentVal = getCurrentVal(id)
+      currentVal = getCurrentVal(wp_post_id)
 
     # if values have changed, update the db
     if valsAreEqual(updatedVal, currentVal) == False:
@@ -61,14 +61,14 @@ def permalink(slug, date):
   """
   return '%s/%d/%s/%s/' % (settings.BASE_URL, date.year, str(date.month).zfill(2), slug)
 
-def isInDb(id):
+def isInDb(wp_post_id):
   """ Returns a boolean indicating whether there's already
       an entry in the db for the story
   """
   db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
     settings.DB, charset='utf8', use_unicode=True)
   cur = db.cursor()
-  query = "SELECT * FROM %s WHERE id = %s" % (settings.FB_TABLE, str(id))
+  query = "SELECT * FROM %s WHERE wp_post_id = %s" % (settings.FB_TABLE, str(wp_post_id))
   try:
     cur.execute(query)
     if cur.fetchone() == None:
@@ -82,7 +82,7 @@ def isInDb(id):
   
 
 def getAllInfoForAllPosts():
-  """ Returns a list of lists(id, slug, date) of all published stories """
+  """ Returns a list of lists(wp_post_id, slug, date) of all published stories """
   # set up database connection
   # IMPORTANT: set the charset and use_unicode args
   db = mysql.connect(
@@ -112,12 +112,12 @@ def getUpdatedVal(post):
       Accepts a list of 3 items: id, slug, date
   """
   if (type(post) is list and len(post) == 3):
-    id = post[0]
+    wp_post_id = post[0]
     slug = post[1]
     date = post[2]
 
   updated = dict.fromkeys(settings.FB_KEYS)
-  updated['wp_post_id'] = id
+  updated['wp_post_id'] = wp_post_id
   updated['date'] = str(datetime.date.today())
 
   # form the url
@@ -149,15 +149,15 @@ def getUpdatedVal(post):
     pass
   return updated
 
-def getCurrentVal(id):
+def getCurrentVal(wp_post_id):
   """ Return a dict of Facebook counts in the database"""
   current = dict.fromkeys(settings.FB_KEYS)
   db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
     settings.DB, charset='utf8', use_unicode=True)
   cur = db.cursor()
   
-  query = "SELECT * FROM facebook WHERE id = %s and date = " \
-    "(SELECT max(date) FROM facebook WHERE id = %s)" % (id, id)
+  query = "SELECT * FROM facebook WHERE wp_post_id = %s and date = " \
+    "(SELECT max(date) FROM facebook WHERE wp_post_id = %s)" % (wp_post_id, wp_post_id)
   try:
     cur.execute(query)
     results = cur.fetchone()
@@ -177,8 +177,8 @@ def getCurrentVal(id):
     db.close()
   return current
   
-def getHeadline(id):
-  """ Return the headline of the post with the given id """
+def getHeadline(wp_post_id):
+  """ Return the headline of the post with the given wp_post_id """
   # IMPORTANT: set the charset and use_unicode args
   
   db = mysql.connect(settings.HOST, settings.USER, settings.PW, \
@@ -187,8 +187,8 @@ def getHeadline(id):
   query = """
     SELECT post_title
     FROM TheDO_posts
-    WHERE id = %s
-  """ % (str(id))
+    WHERE wp_post_id = %s
+  """ % (str(wp_post_id))
   try: 
     cur.execute(query)
     results = cur.fetchone()[0]
@@ -223,10 +223,10 @@ def valsAreEqual(updated, current):
   else:
     return True
 
-def insertEntry(id, updatedVal, currentVal, new = False):
+def insertEntry(wp_post_id, updatedVal, currentVal, new = False):
   """
   Inserts a entry into the database
-  id: the id of hte article to insert
+  wp_post_id: the wp_post_id of hte article to insert
   updatedVal: the dict of updated values
   new: True if the entry is new, false otherwise
   """
@@ -236,7 +236,7 @@ def insertEntry(id, updatedVal, currentVal, new = False):
       "Shares:%5s\n"\
       "Likes:%6s\n" \
       "Comments:%3s" % (
-      getHeadline(id), 
+      getHeadline(wp_post_id), 
       updatedVal['shares'],
       updatedVal['likes'],  
       updatedVal['comments']
@@ -256,7 +256,7 @@ def insertEntry(id, updatedVal, currentVal, new = False):
       "Likes:%10d\n"\
       "Comments:%7d\n\n"\
       % (\
-        getHeadline(id),\
+        getHeadline(wp_post_id),\
         int(updatedVal['shares']) - int(currentVal['shares']),\
         int(updatedVal['likes']) - int(currentVal['likes']),\
         int(updatedVal['comments']) - int(currentVal['comments']),\
@@ -272,7 +272,7 @@ def insertEntry(id, updatedVal, currentVal, new = False):
   
   # prep query
   query = """
-  INSERT INTO %s (id, url, share_count, like_count, 
+  INSERT INTO %s (wp_post_id, url, share_count, like_count, 
   comment_count, click_count, comments_fbid, date) 
   VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')
   """ % (settings.FB_TABLE, updatedVal['wp_post_id'], updatedVal['url'], updatedVal['shares'], \
